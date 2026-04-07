@@ -76,35 +76,35 @@ class LaunchArgs(
     }
 
     private fun getMinecraftJVMArgs(): Array<String> {
-        val versionInfo = Tools.getVersionInfo(minecraftVersion, true)
-
-//        // Parse Forge 1.17+ additional JVM Arguments
-//        if (versionInfo.inheritsFrom == null || versionInfo.arguments == null || versionInfo.arguments.jvm == null) {
-//            return emptyArray()
-//        }
+        val rawVersionInfo = Tools.getVersionInfo(minecraftVersion, true)
+        val inheritedVersionInfo = if (rawVersionInfo.inheritsFrom != null) Tools.getVersionInfo(minecraftVersion) else rawVersionInfo
 
         val varArgMap: MutableMap<String, String?> = android.util.ArrayMap()
         varArgMap["classpath_separator"] = ":"
         varArgMap["library_directory"] = getLibrariesHome()
-        varArgMap["version_name"] = versionInfo.id
+        varArgMap["version_name"] = rawVersionInfo.id
         varArgMap["natives_directory"] = PathManager.DIR_NATIVE_LIB
 
         val minecraftArgs: MutableList<String> = java.util.ArrayList()
-        versionInfo.arguments?.let {
-            fun String.addIgnoreListIfHas(): String {
-                if (startsWith("-DignoreList=")) return "$this,$versionFileName.jar"
-                return this
-            }
-            it.jvm?.forEach { arg ->
-                if (arg is String) {
-                    minecraftArgs.add(arg.addIgnoreListIfHas())
-                }
+        fun String.addIgnoreListIfHas(): String {
+            if (startsWith("-DignoreList=")) return "$this,$versionFileName.jar"
+            return this
+        }
+
+        val inheritedJvm = inheritedVersionInfo.arguments?.jvm?.mapNotNull { if (it is String) it else null } ?: emptyList()
+        inheritedJvm.forEach { minecraftArgs.add(it.addIgnoreListIfHas()) }
+        rawVersionInfo.arguments?.jvm?.forEach { arg ->
+            if (arg is String && !minecraftArgs.contains(arg)) {
+                minecraftArgs.add(arg.addIgnoreListIfHas())
             }
         }
+
         return JSONUtils.insertJSONValueList(minecraftArgs.toTypedArray<String>(), varArgMap)
     }
 
     private fun getMinecraftClientArgs(): Array<String> {
+        val effectiveVersionInfo = if (versionInfo.inheritsFrom != null) Tools.getVersionInfo(minecraftVersion) else versionInfo
+
         val verArgMap: MutableMap<String, String> = ArrayMap()
         verArgMap["auth_session"] = account.accessToken
         verArgMap["auth_access_token"] = account.accessToken
@@ -112,7 +112,7 @@ class LaunchArgs(
         verArgMap["auth_uuid"] = account.profileId.replace("-", "")
         verArgMap["auth_xuid"] = account.xuid
         verArgMap["assets_root"] = ProfilePathHome.getAssetsHome()
-        verArgMap["assets_index_name"] = versionInfo.assets
+        verArgMap["assets_index_name"] = effectiveVersionInfo.assets
         verArgMap["game_assets"] = ProfilePathHome.getAssetsHome()
         verArgMap["game_directory"] = gameDirPath.absolutePath
         verArgMap["user_properties"] = "{}"
@@ -122,14 +122,14 @@ class LaunchArgs(
         setLauncherInfo(verArgMap)
 
         val minecraftArgs: MutableList<String> = ArrayList()
-        versionInfo.arguments?.apply {
+        effectiveVersionInfo.arguments?.apply {
             // Support Minecraft 1.13+
             game.forEach { if (it is String) minecraftArgs.add(it) }
         }
 
         return JSONUtils.insertJSONValueList(
             splitAndFilterEmpty(
-                versionInfo.minecraftArguments ?:
+                effectiveVersionInfo.minecraftArguments ?:
                 Tools.fromStringArray(minecraftArgs.toTypedArray())
             ), verArgMap
         )

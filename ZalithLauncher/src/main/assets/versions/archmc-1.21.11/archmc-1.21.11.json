@@ -1,0 +1,38 @@
+{
+  "id": "archmc-1.21.11",
+  "inheritsFrom": "1.21.11",
+  "mainClass": "net.minecraft.client.main.Main",
+  "type": "release",
+  "releaseTime": "2026-04-01T00:00:00+00:00",
+  "time": "2026-04-01T00:00:00+00:00",
+  "arguments": {
+    "game": [
+      "--username", "${auth_player_name}",
+      "--version", "${version_name}",
+      "--gameDir", "${game_directory}",
+      "--assetsDir", "${game_assets}",
+      "--assetIndex", "${assets_index_name}",
+      "--uuid", "${auth_uuid}",
+      "--accessToken", "${auth_access_token}",
+      "--userType", "${user_type}",
+      "--versionType", "${version_type}"
+    ],
+    "jvm": [
+      "-Xms2G",
+      "-Xmx2G",
+      "-XX:+UseG1GC",
+      "-XX:+UnlockExperimentalVMOptions",
+      "-XX:MaxGCPauseMillis=50",
+      "-XX:+ParallelRefProcEnabled",
+      "-XX:+AlwaysPreTouch",
+      "-XX:+UseStringDeduplication",
+      "-XX:+UseCompressedOops",
+      "-XX:+DisableExplicitGC",
+      "-XX:+NewRatio=3",
+      "-XX:+SurvivorRatio=8",
+      "-XX:+MaxTenuringThreshold=1",
+      "-XX:+UseGCOverheadLimit",
+      "-XX:+OptimizeStringConcat"
+    ]
+  }
+}

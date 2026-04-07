@@ -41,26 +41,32 @@ class InstallableAdapter(
     }
 
     fun startAllTasks() {
-        items.forEachIndexed { index, item ->
-            if (!item.isFinished) {
-                Thread {
-                    item.task.apply {
-                        setTaskRunningListener(object : OnTaskRunningListener {
-                            override fun onTaskStart() {
-                                item.isRunning = true
-                                updateUI { notifyItemChanged(index) }
-                            }
+        val unfinishedItems = items.mapIndexedNotNull { index, item ->
+            if (!item.isFinished) index to item else null
+        }
+        if (unfinishedItems.isEmpty()) {
+            updateUI { listener.onAllTasksCompleted() }
+            return
+        }
 
-                            override fun onTaskEnd() {
-                                item.isRunning = false
-                                item.isFinished = true
-                                updateTaskCount(index)
-                            }
-                        })
-                    }
-                    item.task.run()
-                }.start()
-            }
+        unfinishedItems.forEach { (index, item) ->
+            Thread {
+                item.task.apply {
+                    setTaskRunningListener(object : OnTaskRunningListener {
+                        override fun onTaskStart() {
+                            item.isRunning = true
+                            updateUI { notifyItemChanged(index) }
+                        }
+
+                        override fun onTaskEnd() {
+                            item.isRunning = false
+                            item.isFinished = true
+                            updateTaskCount(index)
+                        }
+                    })
+                }
+                item.task.run()
+            }.start()
         }
     }
 

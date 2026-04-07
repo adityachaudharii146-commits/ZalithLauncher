@@ -134,6 +134,11 @@ class SplashActivity : BaseActivity() {
         }.execute()
 
         binding.startButton.isClickable = true
+        if (items.isEmpty()) {
+            toMain()
+        } else {
+            binding.startButton.performClick()
+        }
     }
 
     private fun toMain() {

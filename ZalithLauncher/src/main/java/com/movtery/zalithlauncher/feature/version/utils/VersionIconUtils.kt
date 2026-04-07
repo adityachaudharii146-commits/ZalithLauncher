@@ -50,6 +50,11 @@ class VersionIconUtils(
             }
         }
 
+        if (!isIconSet && version.getVersionName() == "archmc-1.21.11") {
+            imageView.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_archmc_logo))
+            isIconSet = true
+        }
+
         if (!isIconSet) imageView.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_minecraft))
 
         return isCustomIcon
